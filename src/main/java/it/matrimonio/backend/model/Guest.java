@@ -48,4 +48,7 @@ public class Guest {
     )
     @Builder.Default
     private List<Companion> companions = new ArrayList<>();
+
+    @Column(nullable = false, unique = true, updatable = false, length = 64)
+    private String accessToken;
 }

@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -60,6 +61,7 @@ public class GuestService {
                 .menuType(request.getMenuType())
                 .rsvpStatus(request.getRsvpStatus())
                 .notes(request.getNotes())
+                .accessToken(UUID.randomUUID().toString())
                 .build();
 
         return toResponse(guestRepository.save(guest));
