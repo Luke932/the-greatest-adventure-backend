@@ -2,6 +2,8 @@ package it.matrimonio.backend.controller;
 
 import it.matrimonio.backend.dto.GuestRequest;
 import it.matrimonio.backend.dto.GuestResponse;
+import it.matrimonio.backend.dto.RsvpRequest;
+import it.matrimonio.backend.model.RsvpStatus;
 import it.matrimonio.backend.service.GuestService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +21,17 @@ public class GuestController {
     private final GuestService guestService;
 
     @GetMapping
-    public ResponseEntity<List<GuestResponse>> findAll() {
-        return ResponseEntity.ok(guestService.findAll());
+    public ResponseEntity<List<GuestResponse>> findAll(
+            @RequestParam(required = false) RsvpStatus status
+    ) {
+
+        if (status == null) {
+            return ResponseEntity.ok(guestService.findAll());
+        }
+
+        return ResponseEntity.ok(
+                guestService.findByRsvpStatus(status)
+        );
     }
 
     @GetMapping("/{id}")
@@ -28,6 +39,14 @@ public class GuestController {
             @PathVariable Long id
     ) {
         return ResponseEntity.ok(guestService.findById(id));
+    }
+
+    @PatchMapping("/{id}/rsvp")
+    public GuestResponse updateRsvp(
+            @PathVariable Long id,
+            @Valid @RequestBody RsvpRequest request) {
+
+        return guestService.updateRsvp(id, request);
     }
 
     @PostMapping

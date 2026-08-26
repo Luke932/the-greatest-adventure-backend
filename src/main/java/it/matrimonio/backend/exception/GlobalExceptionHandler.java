@@ -56,4 +56,34 @@ public class GlobalExceptionHandler {
                 .badRequest()
                 .body(response);
     }
+    @ExceptionHandler(CompanionNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCompanionNotFound(
+            CompanionNotFoundException exception
+    ) {
+
+        ErrorResponse response = ErrorResponse.builder()
+                .status(HttpStatus.NOT_FOUND.value())
+                .message(exception.getMessage())
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(response);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGenericException(
+            Exception exception
+    ) {
+        ErrorResponse response = ErrorResponse.builder()
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .message("Si è verificato un errore interno")
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(response);
+    }
 }

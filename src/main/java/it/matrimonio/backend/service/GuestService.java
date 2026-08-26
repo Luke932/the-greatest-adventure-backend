@@ -2,9 +2,11 @@ package it.matrimonio.backend.service;
 
 import it.matrimonio.backend.dto.GuestRequest;
 import it.matrimonio.backend.dto.GuestResponse;
+import it.matrimonio.backend.dto.RsvpRequest;
 import it.matrimonio.backend.exception.GuestNotFoundException;
 import it.matrimonio.backend.mapper.CompanionMapper;
 import it.matrimonio.backend.model.Guest;
+import it.matrimonio.backend.model.RsvpStatus;
 import it.matrimonio.backend.repository.GuestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,7 +21,7 @@ public class GuestService {
     private final CompanionMapper companionMapper;
 
     public List<GuestResponse> findAll() {
-        return guestRepository.findAll()
+        return guestRepository.findAllWithCompanions()
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -30,6 +32,21 @@ public class GuestService {
                 .orElseThrow(() -> new GuestNotFoundException(id));
 
         return toResponse(guest);
+    }
+    public List<GuestResponse> findByRsvpStatus(RsvpStatus rsvpStatus) {
+        return guestRepository.findByRsvpStatus(rsvpStatus)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+    public GuestResponse updateRsvp(Long id, RsvpRequest request) {
+
+        Guest guest = guestRepository.findById(id)
+                .orElseThrow(() -> new GuestNotFoundException(id));
+
+        guest.setRsvpStatus(request.getRsvpStatus());
+
+        return toResponse(guestRepository.save(guest));
     }
 
     public GuestResponse save(GuestRequest request) {
