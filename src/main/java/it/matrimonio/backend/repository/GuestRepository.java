@@ -36,4 +36,13 @@ public interface GuestRepository extends JpaRepository<Guest, Long> {
         """)
     List<Guest> findByRsvpStatus(@Param("rsvpStatus") RsvpStatus rsvpStatus);
     Optional<Guest> findByAccessToken(String accessToken);
+    @Query("""
+    SELECT DISTINCT g
+    FROM Guest g
+    LEFT JOIN FETCH g.companions
+    WHERE g.accessToken = :accessToken
+    """)
+    Optional<Guest> findByAccessTokenWithCompanions(
+            @Param("accessToken") String accessToken
+    );
 }

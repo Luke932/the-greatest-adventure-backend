@@ -20,6 +20,7 @@ public class GuestService {
 
     private final GuestRepository guestRepository;
     private final CompanionMapper companionMapper;
+    private final EmailService emailService;
 
     public List<GuestResponse> findAll() {
         return guestRepository.findAllWithCompanions()
@@ -64,7 +65,11 @@ public class GuestService {
                 .accessToken(UUID.randomUUID().toString())
                 .build();
 
-        return toResponse(guestRepository.save(guest));
+        Guest savedGuest = guestRepository.save(guest);
+
+        emailService.sendInvitationEmail(savedGuest);
+
+        return toResponse(savedGuest);
     }
 
     public GuestResponse update(Long id, GuestRequest request) {

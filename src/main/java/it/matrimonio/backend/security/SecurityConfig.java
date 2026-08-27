@@ -46,12 +46,11 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // =========================
-                        // API PUBBLICHE
-                        // =========================
-
-                        // Login degli sposi
+                        // Login sposi
                         .requestMatchers("/api/auth/**").permitAll()
+
+                        // Invito pubblico tramite token
+                        .requestMatchers("/api/public/invites/**").permitAll()
 
                         // Creazione partecipante
                         .requestMatchers(
@@ -59,39 +58,10 @@ public class SecurityConfig {
                                 "/api/guests"
                         ).permitAll()
 
-                        // RSVP partecipante
-                        .requestMatchers(
-                                HttpMethod.PATCH,
-                                "/api/guests/*/rsvp"
-                        ).permitAll()
-
-                        // Creazione companion
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/api/guests/*/companions"
-                        ).permitAll()
-
-
-                        // =========================
-                        // API PRIVATE - ADMIN
-                        // =========================
-
-                        // Guest
-                        .requestMatchers("/api/guests/**")
-                        .hasRole("ADMIN")
-
-                        // Companion
-                        .requestMatchers("/api/companions/**")
-                        .hasRole("ADMIN")
-
-                        // Statistiche
-                        .requestMatchers("/api/stats/**")
-                        .hasRole("ADMIN")
-
-
-                        // =========================
-                        // DEFAULT
-                        // =========================
+                        // API private
+                        .requestMatchers("/api/guests/**").hasRole("ADMIN")
+                        .requestMatchers("/api/companions/**").hasRole("ADMIN")
+                        .requestMatchers("/api/stats/**").hasRole("ADMIN")
 
                         .anyRequest().authenticated()
                 )

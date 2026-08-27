@@ -1,0 +1,940 @@
+Test Book — Wedding Backend
+
+Base URL:
+
+http://localhost:8080
+0. Stato iniziale
+
+Prima di iniziare, assicurati di avere:
+
+database funzionante
+applicazione Spring Boot avviata
+almeno un utente ADMIN
+database eventualmente pulito per i test di creazione
+
+Per controllare i Guest:
+
+GET http://localhost:8080/api/guests
+
+Senza JWT deve essere:
+
+401 Unauthorized
+1. AUTENTICAZIONE
+1.1 Login ADMIN
+Request
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+Body
+{
+  "email": "sposi@email.com",
+  "password": "password123"
+}
+Atteso
+200 OK
+
+con il JWT.
+
+Salva il token perché lo useremo nei test privati.
+
+1.2 Login con password errata
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+{
+  "email": "sposi@email.com",
+  "password": "passwordERRATA"
+}
+Atteso
+401 Unauthorized
+1.3 Login con utente inesistente
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+{
+  "email": "inesistente@email.com",
+  "password": "password123"
+}
+Atteso
+401 Unauthorized
+2. CREAZIONE GUEST PUBBLICA
+
+Questa API è pubblica perché il partecipante può compilare il form.
+
+2.1 Creazione Guest
+POST http://localhost:8080/api/guests
+Content-Type: application/json
+{
+  "name": "Luca",
+  "surname": "Verde",
+  "email": "luca.verde@email.com",
+  "phone": "+393331234567",
+  "allergies": null,
+  "menuType": "STANDARD",
+  "rsvpStatus": "PENDING",
+  "notes": "Invitato principale"
+}
+Atteso
+201 Created
+
+Il backend deve creare anche automaticamente:
+
+accessToken
+
+Il token non deve essere restituito nel GuestResponse.
+
+Per recuperarlo durante i test:
+
+SELECT id, name, surname, access_token
+FROM guests;
+2.2 Creiamo un secondo Guest
+POST http://localhost:8080/api/guests
+Content-Type: application/json
+{
+  "name": "Marco",
+  "surname": "Bianchi",
+  "email": "marco.bianchi@email.com",
+  "phone": "+393339876543",
+  "allergies": "Frutta secca",
+  "menuType": "VEGETARIAN",
+  "rsvpStatus": "CONFIRMED",
+  "notes": "Nessuna altra esigenza"
+}
+Atteso
+201 Created
+2.3 Creiamo un terzo Guest
+POST http://localhost:8080/api/guests
+Content-Type: application/json
+{
+  "name": "Giulia",
+  "surname": "Rossi",
+  "email": "giulia.rossi@email.com",
+  "phone": "+393331112233",
+  "allergies": null,
+  "menuType": "STANDARD",
+  "rsvpStatus": "DECLINED",
+  "notes": "Non potrà partecipare"
+}
+Atteso
+201 Created
+3. VALIDAZIONE GUEST
+
+Proviamo una richiesta non valida.
+
+POST http://localhost:8080/api/guests
+Content-Type: application/json
+{
+  "name": "",
+  "surname": "",
+  "email": "email-non-valida",
+  "phone": "+393331234567",
+  "menuType": "STANDARD",
+  "rsvpStatus": "PENDING"
+}
+Atteso
+400 Bad Request
+
+con:
+
+{
+  "status": 400,
+  "message": "Errore di validazione",
+  "timestamp": "...",
+  "errors": {
+    "name": "...",
+    "surname": "...",
+    "email": "..."
+  }
+}
+4. API PRIVATE DEI GUEST
+
+Da questo punto usiamo:
+
+Authorization: Bearer IL_TUO_JWT_ADMIN
+4.1 Lista Guest
+GET http://localhost:8080/api/guests
+Authorization: Bearer IL_TUO_JWT_ADMIN
+Atteso
+200 OK
+
+con la lista dei partecipanti.
+
+4.2 Lista Guest senza autenticazione
+GET http://localhost:8080/api/guests
+Atteso
+401 Unauthorized
+4.3 Filtrare per RSVP
+Confermati
+GET http://localhost:8080/api/guests?status=CONFIRMED
+Authorization: Bearer IL_TUO_JWT_ADMIN
+Pending
+GET http://localhost:8080/api/guests?status=PENDING
+Authorization: Bearer IL_TUO_JWT_ADMIN
+Declined
+GET http://localhost:8080/api/guests?status=DECLINED
+Authorization: Bearer IL_TUO_JWT_ADMIN
+Atteso
+200 OK
+
+con solamente i Guest dello stato richiesto.
+
+5. DETTAGLIO GUEST
+GET http://localhost:8080/api/guests/1
+Authorization: Bearer IL_TUO_JWT_ADMIN
+Atteso
+200 OK
+
+con:
+
+{
+  "id": 1,
+  "name": "Luca",
+  "surname": "Verde",
+  "...": "...",
+  "companions": []
+}
+5.1 Guest inesistente
+GET http://localhost:8080/api/guests/9999
+Authorization: Bearer IL_TUO_JWT_ADMIN
+Atteso
+404 Not Found
+6. MODIFICA GUEST
+PUT http://localhost:8080/api/guests/1
+Authorization: Bearer IL_TUO_JWT_ADMIN
+Content-Type: application/json
+Body
+{
+  "name": "Luca",
+  "surname": "Verde",
+  "email": "luca.nuova@email.com",
+  "phone": "+393339999999",
+  "allergies": "Lattosio",
+  "menuType": "STANDARD",
+  "rsvpStatus": "CONFIRMED",
+  "notes": "Modificato dagli sposi"
+}
+Atteso
+200 OK
+7. RSVP
+
+Il vecchio endpoint:
+
+PATCH /api/guests/{id}/rsvp
+
+non deve più essere il metodo utilizzato dal partecipante.
+
+Ora usiamo il token personale.
+
+8. INVITO PUBBLICO CON TOKEN
+
+Recuperiamo dal DB:
+
+SELECT id, name, surname, access_token
+FROM guests;
+
+Supponiamo:
+
+id: 1
+name: Luca
+access_token: 38d5c518-1b6f-40ff-a0ba-4e3df8a85221
+8.1 Visualizzazione invito
+GET http://localhost:8080/api/public/invites/38d5c518-1b6f-40ff-a0ba-4e3df8a85221
+
+Senza Authorization.
+
+Atteso
+200 OK
+
+con i dati di Luca.
+
+8.2 Token errato
+GET http://localhost:8080/api/public/invites/token-inesistente
+Atteso
+404 Not Found
+{
+  "status": 404,
+  "message": "Token invito non valido o scaduto",
+  "timestamp": "...",
+  "errors": null
+}
+9. RSVP PUBBLICO
+
+Usiamo sempre il token.
+
+PATCH http://localhost:8080/api/public/invites/38d5c518-1b6f-40ff-a0ba-4e3df8a85221/rsvp
+Content-Type: application/json
+Body
+{
+  "rsvpStatus": "CONFIRMED"
+}
+Atteso
+200 OK
+
+Il Guest passa a:
+
+CONFIRMED
+9.1 RSVP DECLINED
+PATCH http://localhost:8080/api/public/invites/38d5c518-1b6f-40ff-a0ba-4e3df8a85221/rsvp
+Content-Type: application/json
+{
+  "rsvpStatus": "DECLINED"
+}
+Atteso
+200 OK
+9.2 RSVP non valido
+PATCH http://localhost:8080/api/public/invites/38d5c518-1b6f-40ff-a0ba-4e3df8a85221/rsvp
+Content-Type: application/json
+{
+  "rsvpStatus": "QUALCOSA"
+}
+Atteso
+400 Bad Request
+10. COMPANION PUBBLICO
+
+Sempre tramite token.
+
+10.1 Creazione Companion
+POST http://localhost:8080/api/public/invites/38d5c518-1b6f-40ff-a0ba-4e3df8a85221/companions
+Content-Type: application/json
+Body
+{
+  "name": "Anna",
+  "surname": "Verdi",
+  "email": "anna.verdi@email.com",
+  "phone": "+393334445566",
+  "allergies": "Nessuna",
+  "menuType": "STANDARD",
+  "notes": "Compagna di Luca"
+}
+Atteso
+200 OK
+
+oppure 201 Created se abbiamo impostato esplicitamente quello status sul controller.
+
+Importante: non c'è guestId nel body.
+
+L'associazione viene fatta attraverso:
+
+token → Guest → Companion
+10.2 Secondo Companion
+POST http://localhost:8080/api/public/invites/38d5c518-1b6f-40ff-a0ba-4e3df8a85221/companions
+Content-Type: application/json
+{
+  "name": "Paolo",
+  "surname": "Verdi",
+  "email": "paolo.verdi@email.com",
+  "phone": "+393337778899",
+  "allergies": "Frutta secca",
+  "menuType": "VEGETARIAN",
+  "notes": "Secondo accompagnatore"
+}
+Atteso
+
+Creazione corretta e associazione allo stesso Guest.
+
+11. VALIDAZIONE COMPANION
+POST http://localhost:8080/api/public/invites/38d5c518-1b6f-40ff-a0ba-4e3df8a85221/companions
+Content-Type: application/json
+{
+  "name": "",
+  "surname": "",
+  "email": "email-sbagliata",
+  "menuType": "STANDARD"
+}
+Atteso
+400 Bad Request
+12. COMPANION DAL LATO ADMIN
+12.1 Lista Companion di un Guest
+GET http://localhost:8080/api/guests/1/companions
+Authorization: Bearer IL_TUO_JWT_ADMIN
+Atteso
+200 OK
+
+con:
+
+[
+  {
+    "id": 1,
+    "name": "Anna",
+    "surname": "Verdi",
+    "email": "anna.verdi@email.com",
+    "phone": "+393334445566",
+    "allergies": "Nessuna",
+    "menuType": "STANDARD",
+    "notes": "Compagna di Luca"
+  }
+]
+12.2 Companion inesistente
+GET http://localhost:8080/api/companions/9999
+Authorization: Bearer IL_TUO_JWT_ADMIN
+Atteso
+404 Not Found
+13. MODIFICA COMPANION
+PUT http://localhost:8080/api/companions/1
+Authorization: Bearer IL_TUO_JWT_ADMIN
+Content-Type: application/json
+Body
+{
+  "name": "Anna",
+  "surname": "Verdi",
+  "email": "anna.nuova@email.com",
+  "phone": "+393331234567",
+  "allergies": "Lattosio",
+  "menuType": "VEGETARIAN",
+  "notes": "Esigenza modificata"
+}
+Atteso
+200 OK
+14. ELIMINAZIONE COMPANION
+DELETE http://localhost:8080/api/companions/1
+Authorization: Bearer IL_TUO_JWT_ADMIN
+Atteso
+204 No Content
+15. ELIMINAZIONE GUEST
+DELETE http://localhost:8080/api/guests/1
+Authorization: Bearer IL_TUO_JWT_ADMIN
+Atteso
+204 No Content
+
+Se il Guest ha Companion, verifica anche che il comportamento della relazione sia quello che hai previsto nel mapping JPA: non assumiamo automaticamente che i Companion vengano cancellati, dipende dal cascade/orphanRemoval configurato.
+
+16. STATISTICHE
+GET http://localhost:8080/api/stats
+Authorization: Bearer IL_TUO_JWT_ADMIN
+Atteso
+
+Una risposta tipo:
+
+{
+  "totalGuests": 3,
+  "confirmedGuests": 2,
+  "pendingGuests": 0,
+  "declinedGuests": 1,
+  "totalCompanions": 2,
+  "confirmedPeople": 4,
+  "pendingPeople": 0,
+  "declinedPeople": 1
+}
+
+I valori devono essere coerenti con i dati effettivamente presenti nel DB.
+
+17. SICUREZZA — TEST FONDAMENTALI
+
+Questi sono particolarmente importanti.
+
+Guest senza JWT
+GET /api/guests
+
+→ 401
+
+Guest con JWT ADMIN
+GET /api/guests
+Authorization: Bearer JWT
+
+→ 200
+
+Stats senza JWT
+GET /api/stats
+
+→ 401
+
+Stats con JWT ADMIN
+GET /api/stats
+Authorization: Bearer JWT
+
+→ 200
+
+Invito senza JWT
+GET /api/public/invites/{token}
+
+→ 200
+
+RSVP senza JWT
+PATCH /api/public/invites/{token}/rsvp
+
+→ 200
+
+Creazione Guest senza JWT
+POST /api/guests
+
+→ 201
+
+Creazione Companion tramite token senza JWT
+POST /api/public/invites/{token}/companions
+
+→ creazione corretta.
+
+18. Test di sicurezza importante
+
+Prova a usare un guestId direttamente sulle vecchie API pubbliche:
+
+POST http://localhost:8080/api/guests/1/companions
+
+senza JWT.
+
+Deve essere rifiutato, perché abbiamo deciso di non permettere più la creazione dei companion tramite semplice guestId.
+
+Stessa cosa:
+
+PATCH http://localhost:8080/api/guests/1/rsvp
+
+senza JWT.
+
+Deve essere rifiutato.
+
+Il flusso corretto è:
+
+TOKEN INVITO
+     │
+     ▼
+/api/public/invites/{token}
+     │
+     ├── GET       → visualizza invito
+     ├── PATCH     → modifica RSVP
+     └── POST      → aggiunge companion
+
+mentre:
+
+JWT ADMIN
+     │
+     ▼
+API PRIVATE
+     │
+     ├── guests
+     ├── companions
+     └── stats
+19. Test finale end-to-end
+
+Questo è quello che farei per ultimo, perché verifica praticamente tutto il progetto.
+
+1. Login ADMIN
+       ↓
+2. Creazione Guest
+       ↓
+3. Recupero accessToken dal DB
+       ↓
+4. GET invite tramite token
+       ↓
+5. PATCH RSVP tramite token
+       ↓
+6. POST Companion tramite token
+       ↓
+7. GET Guest tramite JWT ADMIN
+       ↓
+8. Verifica Companion
+       ↓
+9. GET /api/stats
+       ↓
+10. Verifica conteggi
+
+🧪 Test API pubbliche — Invito partecipante
+
+Per tutti questi test utilizziamo un token reale presente nel DB.
+
+Per esempio:
+
+38d5c518-1b6f-40ff-a0ba-4e3df8a85221
+
+Sostituiscilo con il token effettivamente associato al Guest che vuoi testare.
+
+1. Recupero invito
+Endpoint
+GET http://localhost:8080/api/public/invites/{token}
+
+Esempio:
+
+GET http://localhost:8080/api/public/invites/38d5c518-1b6f-40ff-a0ba-4e3df8a85221
+Authorization
+
+Nessun Bearer Token.
+
+Body
+
+Nessuno.
+
+Risultato atteso
+200 OK
+
+Esempio:
+
+{
+    "name": "Luca",
+    "surname": "Verde",
+    "rsvpStatus": "PENDING",
+    "companions": []
+}
+
+Se il Guest ha già accompagnatori:
+
+{
+    "name": "Luca",
+    "surname": "Verde",
+    "rsvpStatus": "PENDING",
+    "companions": [
+        {
+            "id": 1,
+            "name": "Giulia",
+            "surname": "Rossi",
+            "email": "giulia@email.com",
+            "phone": "+393339876543",
+            "allergies": "Frutta secca",
+            "menuType": "VEGETARIAN",
+            "notes": "Nessuna altra esigenza"
+        }
+    ]
+}
+2. Recupero invito con token inesistente
+Endpoint
+GET http://localhost:8080/api/public/invites/token-inesistente
+Body
+
+Nessuno.
+
+Authorization
+
+Nessuna.
+
+Risultato atteso
+404 NOT FOUND
+
+Con qualcosa tipo:
+
+{
+    "status": 404,
+    "message": "Token invito non valido",
+    "timestamp": "...",
+    "errors": null
+}
+
+Questo test è importante perché verifica che un token casuale non permetta di accedere ai dati.
+
+3. Conferma RSVP
+
+Prima assicurati che il Guest sia in uno stato che renda il test evidente, ad esempio:
+
+PENDING
+Endpoint
+PATCH http://localhost:8080/api/public/invites/{token}/rsvp
+
+Esempio:
+
+PATCH http://localhost:8080/api/public/invites/38d5c518-1b6f-40ff-a0ba-4e3df8a85221/rsvp
+Headers
+Content-Type: application/json
+Body
+{
+    "rsvpStatus": "CONFIRMED"
+}
+Authorization
+
+Nessuna.
+
+Risultato atteso
+200 OK
+
+con:
+
+{
+    "name": "Luca",
+    "surname": "Verde",
+    "rsvpStatus": "CONFIRMED",
+    "companions": []
+}
+4. Rifiuto RSVP
+
+Ripetiamo lo stesso test per DECLINED.
+
+Endpoint
+PATCH http://localhost:8080/api/public/invites/{token}/rsvp
+Body
+{
+    "rsvpStatus": "DECLINED"
+}
+Risultato atteso
+200 OK
+
+e:
+
+{
+    "name": "Luca",
+    "surname": "Verde",
+    "rsvpStatus": "DECLINED",
+    "companions": []
+}
+
+Poi puoi eventualmente riportarlo a:
+
+{
+    "rsvpStatus": "CONFIRMED"
+}
+
+per lasciare il DB nello stato che preferisci.
+
+5. RSVP con valore non valido
+
+Questo serve a verificare la @Valid.
+
+Endpoint
+PATCH http://localhost:8080/api/public/invites/{token}/rsvp
+Body
+{
+    "rsvpStatus": "CIAO"
+}
+Risultato atteso
+400 BAD REQUEST
+
+Non deve diventare un 500.
+
+6. Aggiunta primo accompagnatore
+Endpoint
+POST http://localhost:8080/api/public/invites/{token}/companions
+
+Esempio:
+
+POST http://localhost:8080/api/public/invites/38d5c518-1b6f-40ff-a0ba-4e3df8a85221/companions
+Headers
+Content-Type: application/json
+Authorization
+
+Nessuna.
+
+Body
+{
+    "name": "Giulia",
+    "surname": "Rossi",
+    "email": "giulia@email.com",
+    "phone": "+393339876543",
+    "allergies": "Frutta secca",
+    "menuType": "VEGETARIAN",
+    "notes": "Nessuna altra esigenza"
+}
+Risultato atteso
+200 OK
+
+Esempio:
+
+{
+    "id": 1,
+    "name": "Giulia",
+    "surname": "Rossi",
+    "email": "giulia@email.com",
+    "phone": "+393339876543",
+    "allergies": "Frutta secca",
+    "menuType": "VEGETARIAN",
+    "notes": "Nessuna altra esigenza"
+}
+7. Verifica che l'accompagnatore appartenga al Guest corretto
+
+Subito dopo:
+
+GET http://localhost:8080/api/public/invites/{token}
+
+Devi vedere:
+
+{
+    "name": "Luca",
+    "surname": "Verde",
+    "rsvpStatus": "CONFIRMED",
+    "companions": [
+        {
+            "id": 1,
+            "name": "Giulia",
+            "surname": "Rossi",
+            "email": "giulia@email.com",
+            "phone": "+393339876543",
+            "allergies": "Frutta secca",
+            "menuType": "VEGETARIAN",
+            "notes": "Nessuna altra esigenza"
+        }
+    ]
+}
+
+Questo test è molto importante: dimostra che il token identifica correttamente il Guest e che il Companion viene collegato a lui.
+
+8. Aggiunta secondo accompagnatore
+
+Ripeti:
+
+POST http://localhost:8080/api/public/invites/{token}/companions
+
+Body:
+
+{
+    "name": "Marco",
+    "surname": "Bianchi",
+    "email": "marco@email.com",
+    "phone": "+393331112233",
+    "allergies": null,
+    "menuType": "STANDARD",
+    "notes": null
+}
+Risultato atteso
+200 OK
+
+Poi fai nuovamente:
+
+GET /api/public/invites/{token}
+
+e devi trovare entrambi gli accompagnatori.
+
+9. Validazione Companion — nome mancante
+Endpoint
+POST http://localhost:8080/api/public/invites/{token}/companions
+Body
+{
+    "name": "",
+    "surname": "Rossi",
+    "email": "test@email.com",
+    "phone": "+393331234567",
+    "allergies": null,
+    "menuType": "STANDARD",
+    "notes": null
+}
+Atteso
+400 BAD REQUEST
+10. Validazione Companion — cognome mancante
+{
+    "name": "Giulia",
+    "surname": "",
+    "email": "test@email.com",
+    "phone": "+393331234567",
+    "allergies": null,
+    "menuType": "STANDARD",
+    "notes": null
+}
+
+Atteso:
+
+400 BAD REQUEST
+11. Validazione Companion — menu mancante
+{
+    "name": "Giulia",
+    "surname": "Rossi",
+    "email": "test@email.com",
+    "phone": "+393331234567",
+    "allergies": null,
+    "menuType": null,
+    "notes": null
+}
+
+Atteso:
+
+400 BAD REQUEST
+12. Token inesistente per RSVP
+Endpoint
+PATCH http://localhost:8080/api/public/invites/token-inesistente/rsvp
+Body
+{
+    "rsvpStatus": "CONFIRMED"
+}
+
+Atteso:
+
+404 NOT FOUND
+13. Token inesistente per Companion
+Endpoint
+POST http://localhost:8080/api/public/invites/token-inesistente/companions
+Body
+{
+    "name": "Test",
+    "surname": "Companion",
+    "email": "test@email.com",
+    "phone": "+393331234567",
+    "allergies": null,
+    "menuType": "STANDARD",
+    "notes": null
+}
+
+Atteso:
+
+404 NOT FOUND
+
+E soprattutto non deve essere creato nessun Companion nel DB.
+
+14. Test sicurezza — niente JWT
+
+Questo è un test che voglio assolutamente nel testbook.
+
+Per tutti e tre:
+
+GET    /api/public/invites/{token}
+PATCH  /api/public/invites/{token}/rsvp
+POST   /api/public/invites/{token}/companions
+
+non mettere:
+
+Authorization: Bearer ...
+
+Devono funzionare comunque.
+
+Questo dimostra che l'area pubblica è effettivamente pubblica.
+
+📘 Cosa aggiungere al Testbook
+
+Sì, aggiungerei una nuova sezione, chiamata:
+
+API Pubbliche — Gestione Invito Partecipante
+
+Con questi test:
+
+#	Test	Metodo	Atteso
+1	Recupero invito	GET	200
+2	Token inesistente	GET	404
+3	Conferma RSVP	PATCH	200
+4	Rifiuto RSVP	PATCH	200
+5	RSVP non valido	PATCH	400
+6	Aggiungi Companion	POST	200
+7	Verifica Companion associato	GET	200
+8	Aggiungi secondo Companion	POST	200
+9	Nome Companion mancante	POST	400
+10	Cognome Companion mancante	POST	400
+11	Menu Companion mancante	POST	400
+12	Token inesistente RSVP	PATCH	404
+13	Token inesistente Companion	POST	404
+14	API pubbliche senza JWT	vari	200
+
+E aggiungerei anche una nota architetturale
+Le API /api/public/invites/** sono accessibili senza JWT.
+L'identificazione dell'invitato avviene tramite accessToken.
+Il client non invia guestId per la creazione degli accompagnatori:
+il Guest viene determinato dal token dell'invito.
+
+Questa nota ci tornerà molto utile quando svilupperemo il frontend.
+
+A questo punto il backend ha praticamente chiuso tutto il flusso dell'invitato. Il prossimo grande blocco è il frontend: la pagina /invito/{token} che viene aperta dal pulsante presente nella mail.
+
+📘 Testbook
+
+Sì: questa parte va aggiunta al testbook.
+
+A questo punto abbiamo una sezione completa:
+
+API PUBBLICHE — INVITO PARTECIPANTE
+
+✓ Recupero invito con token
+✓ Recupero invito con token inesistente
+✓ RSVP CONFIRMED
+✓ RSVP DECLINED
+✓ RSVP non valido
+✓ Creazione Companion tramite token
+✓ Creazione secondo Companion
+✓ Verifica Companion associati
+✓ Validazione Companion
+✓ Token inesistente + RSVP
+✓ Token inesistente + Companion
+✓ Accesso alle API pubbliche senza JWT
+
+Questa è una milestone importante perché ora il flusso backend del partecipante è completo:
+
+EMAIL
+  ↓
+LINK PERSONALE
+  ↓
+TOKEN
+  ↓
+GET INVITO
+  ↓
+RSVP
+  ↓
+ACCOMPAGNATORI
+  ↓
+DATI SALVATI NEL DB
+
+Una volta che questi test passano, io smetterei di aggiungere API al backend per questa parte e passerei al frontend dell'invito. È lì che finalmente il link ricevuto nella mail prenderà vita.
