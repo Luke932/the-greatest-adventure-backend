@@ -72,6 +72,20 @@ public class GuestService {
         return toResponse(savedGuest);
     }
 
+    public void sendInvitation(Long id) {
+
+        Guest guest = guestRepository.findById(id)
+                .orElseThrow(() -> new GuestNotFoundException(id));
+
+        if (guest.getEmail() == null || guest.getEmail().isBlank()) {
+            throw new IllegalStateException(
+                    "L'invitato non ha un indirizzo email."
+            );
+        }
+
+        emailService.sendInvitationEmail(guest);
+    }
+
     public GuestResponse update(Long id, GuestRequest request) {
 
         Guest guest = guestRepository.findById(id)

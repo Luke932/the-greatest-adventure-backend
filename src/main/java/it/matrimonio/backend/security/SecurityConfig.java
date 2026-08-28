@@ -58,11 +58,11 @@ public class SecurityConfig {
                         // Invito pubblico tramite token
                         .requestMatchers("/api/public/invites/**").permitAll()
 
-                        // Creazione partecipante
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/api/guests"
-                        ).permitAll()
+//                        // Creazione partecipante
+//                        .requestMatchers(
+//                                HttpMethod.POST,
+//                                "/api/guests"
+//                        ).permitAll()
 
                         // API private
                         .requestMatchers("/api/guests/**").hasRole("ADMIN")

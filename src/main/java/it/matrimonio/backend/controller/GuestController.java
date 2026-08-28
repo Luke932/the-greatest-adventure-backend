@@ -69,7 +69,14 @@ public class GuestController {
                 guestService.update(id, request)
         );
     }
+    @PostMapping("/{id}/send-invitation")
+    public ResponseEntity<Void> sendInvitation(
+            @PathVariable Long id
+    ) {
+        guestService.sendInvitation(id);
 
+        return ResponseEntity.noContent().build();
+    }
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @PathVariable Long id
