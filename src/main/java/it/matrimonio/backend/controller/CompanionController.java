@@ -15,7 +15,16 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CompanionController {
 
+
     private final CompanionService companionService;
+
+
+    @GetMapping("/companions")
+    public List<CompanionResponse> findAll() {
+
+        return companionService.findAll();
+    }
+
 
     @GetMapping("/guests/{guestId}/companions")
     public List<CompanionResponse> findByGuestId(
@@ -24,12 +33,14 @@ public class CompanionController {
         return companionService.findByGuestId(guestId);
     }
 
+
     @GetMapping("/companions/{id}")
     public CompanionResponse findById(
             @PathVariable Long id) {
 
         return companionService.findById(id);
     }
+
 
     @PostMapping("/guests/{guestId}/companions")
     @ResponseStatus(HttpStatus.CREATED)
@@ -40,6 +51,7 @@ public class CompanionController {
         return companionService.save(guestId, request);
     }
 
+
     @PutMapping("/companions/{id}")
     public CompanionResponse update(
             @PathVariable Long id,
@@ -48,6 +60,7 @@ public class CompanionController {
         return companionService.update(id, request);
     }
 
+
     @DeleteMapping("/companions/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(
@@ -55,4 +68,6 @@ public class CompanionController {
 
         companionService.delete(id);
     }
+
+
 }

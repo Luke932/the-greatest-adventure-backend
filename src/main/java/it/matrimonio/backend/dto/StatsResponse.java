@@ -24,4 +24,14 @@ public class StatsResponse {
     private long pendingPeople;
 
     private long declinedPeople;
+
+    private long standardPeople;
+
+    private long celiacPeople;
+
+    private long vegetarianPeople;
+
+    private long veganPeople;
+
+    private long otherMenuPeople;
 }

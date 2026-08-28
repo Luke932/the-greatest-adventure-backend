@@ -2,6 +2,7 @@ package it.matrimonio.backend.service;
 
 import it.matrimonio.backend.dto.CompanionRequest;
 import it.matrimonio.backend.dto.CompanionResponse;
+import it.matrimonio.backend.dto.GuestResponse;
 import it.matrimonio.backend.exception.CompanionNotFoundException;
 import it.matrimonio.backend.exception.GuestNotFoundException;
 import it.matrimonio.backend.model.Companion;
@@ -19,6 +20,13 @@ public class CompanionService {
 
     private final CompanionRepository companionRepository;
     private final GuestRepository guestRepository;
+
+    public List<CompanionResponse> findAll() {
+        return companionRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
 
     public List<CompanionResponse> findByGuestId(Long guestId) {
 
