@@ -2,30 +2,25 @@ package it.matrimonio.backend.dto;
 
 import it.matrimonio.backend.model.MenuType;
 import it.matrimonio.backend.model.RsvpStatus;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
-
-import java.util.List;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PublicInviteResponse {
+public class PublicGuestUpdateRequest {
 
-    private String name;
+    @NotNull
+    private RsvpStatus rsvpStatus;
 
-    private String surname;
+    @NotNull
+    private MenuType menuType;
 
     private String phone;
 
     private String allergies;
 
-    private MenuType menuType;
-
-    private RsvpStatus rsvpStatus;
-
     private String notes;
-
-    private List<CompanionResponse> companions;
 }

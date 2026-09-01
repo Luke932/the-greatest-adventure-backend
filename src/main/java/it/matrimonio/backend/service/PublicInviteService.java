@@ -41,12 +41,35 @@ public class PublicInviteService {
         );
     }
 
+    public PublicInviteResponse updateGuest(
+            String token,
+            PublicGuestUpdateRequest request
+    ) {
+
+        Guest guest = guestRepository.findByAccessToken(token)
+                .orElseThrow(InvalidInviteTokenException::new);
+
+        guest.setRsvpStatus(request.getRsvpStatus());
+        guest.setMenuType(request.getMenuType());
+        guest.setPhone(request.getPhone());
+        guest.setAllergies(request.getAllergies());
+        guest.setNotes(request.getNotes());
+
+        return toPublicResponse(
+                guestRepository.save(guest)
+        );
+    }
+
     private PublicInviteResponse toPublicResponse(Guest guest) {
 
         return PublicInviteResponse.builder()
                 .name(guest.getName())
                 .surname(guest.getSurname())
+                .phone(guest.getPhone())
+                .allergies(guest.getAllergies())
+                .menuType(guest.getMenuType())
                 .rsvpStatus(guest.getRsvpStatus())
+                .notes(guest.getNotes())
                 .companions(
                         guest.getCompanions()
                                 .stream()
@@ -77,6 +100,24 @@ public class PublicInviteService {
 
         return companionMapper.toResponse(
                 companionRepository.save(companion)
+        );
+    }
+
+    public PublicInviteResponse updatePreferences(
+            String token,
+            GuestPreferencesRequest request
+    ) {
+
+        Guest guest = guestRepository.findByAccessToken(token)
+                .orElseThrow(InvalidInviteTokenException::new);
+
+        guest.setPhone(request.getPhone());
+        guest.setAllergies(request.getAllergies());
+        guest.setMenuType(request.getMenuType());
+        guest.setNotes(request.getNotes());
+
+        return toPublicResponse(
+                guestRepository.save(guest)
         );
     }
 }

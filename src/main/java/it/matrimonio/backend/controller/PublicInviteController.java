@@ -28,11 +28,27 @@ public class PublicInviteController {
         return publicInviteService.updateRsvp(token, request);
     }
 
+    @PatchMapping("/{token}")
+    public PublicInviteResponse updateGuest(
+            @PathVariable String token,
+            @Valid @RequestBody PublicGuestUpdateRequest request
+    ) {
+        return publicInviteService.updateGuest(token, request);
+    }
+
     @PostMapping("/{token}/companions")
     public CompanionResponse addCompanion(
             @PathVariable String token,
             @Valid @RequestBody CompanionRequest request
     ) {
         return publicInviteService.addCompanion(token, request);
+    }
+
+    @PatchMapping("/{token}/preferences")
+    public PublicInviteResponse updatePreferences(
+            @PathVariable String token,
+            @RequestBody GuestPreferencesRequest request
+    ) {
+        return publicInviteService.updatePreferences(token, request);
     }
 }
