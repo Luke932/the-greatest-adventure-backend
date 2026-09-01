@@ -10,7 +10,7 @@ import it.matrimonio.backend.model.RsvpStatus;
 import it.matrimonio.backend.repository.GuestRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
+import org.springframework.beans.factory.annotation.Value;
 import java.util.List;
 import java.util.UUID;
 
@@ -21,6 +21,9 @@ public class GuestService {
     private final GuestRepository guestRepository;
     private final CompanionMapper companionMapper;
     private final EmailService emailService;
+
+    @Value("${wedding.invite.base-url}")
+    private String inviteBaseUrl;
 
     public List<GuestResponse> findAll() {
         return guestRepository.findAllWithCompanions()
@@ -128,6 +131,9 @@ public class GuestService {
                                 .stream()
                                 .map(companionMapper::toResponse)
                                 .toList()
+                )
+                .inviteUrl(
+                        inviteBaseUrl + "/" + guest.getAccessToken()
                 )
                 .build();
     }

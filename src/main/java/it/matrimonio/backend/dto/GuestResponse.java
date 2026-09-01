@@ -32,4 +32,5 @@ public class GuestResponse {
     private String notes;
 
     private List<CompanionResponse> companions;
+    private String inviteUrl;
 }
