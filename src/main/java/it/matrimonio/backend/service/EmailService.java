@@ -2,6 +2,7 @@ package it.matrimonio.backend.service;
 
 import it.matrimonio.backend.model.Guest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -12,6 +13,7 @@ import jakarta.mail.internet.MimeMessage;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EmailService {
 
     private final JavaMailSender mailSender;
@@ -152,6 +154,8 @@ public class EmailService {
                 inviteLink
         );
 
+        log.info(htmlContent);
+
         try {
             MimeMessage message = mailSender.createMimeMessage();
 
@@ -170,8 +174,10 @@ public class EmailService {
             }
 
             mailSender.send(message);
+            log.info("Invio avvenuto");
 
         } catch (MessagingException exception) {
+            log.info("Invio non avvenuto");
             throw new RuntimeException(
                     "Errore durante l'invio dell'email di invito",
                     exception
