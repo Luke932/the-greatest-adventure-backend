@@ -1,27 +1,28 @@
 package it.matrimonio.backend.service;
 
+import com.resend.Resend;
+import com.resend.core.exception.ResendException;
+import com.resend.services.emails.model.CreateEmailOptions;
+import com.resend.services.emails.model.CreateEmailResponse;
+
 import it.matrimonio.backend.model.Guest;
-import lombok.RequiredArgsConstructor;
+
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
-
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class EmailService {
-
-    private final JavaMailSender mailSender;
 
     @Value("${wedding.invite.base-url}")
     private String inviteBaseUrl;
 
-    @Value("${spring.mail.username}")
+    @Value("${RESEND_API_KEY}")
+    private String resendApiKey;
+
+    @Value("${RESEND_FROM_EMAIL}")
     private String fromEmail;
 
     public void sendInvitationEmail(Guest guest) {
@@ -154,32 +155,39 @@ public class EmailService {
                 inviteLink
         );
 
-        log.info(htmlContent);
-
         try {
-            MimeMessage message = mailSender.createMimeMessage();
 
-            MimeMessageHelper helper = new MimeMessageHelper(
-                    message,
-                    true,
-                    "UTF-8"
+            log.info(
+                    "Preparazione invio invito tramite Resend a {}",
+                    guest.getEmail()
             );
 
-            helper.setTo(guest.getEmail());
-            helper.setSubject("Il vostro invito al matrimonio 💍");
-            helper.setText(htmlContent, true);
+            Resend resend = new Resend(resendApiKey);
 
-            if (fromEmail != null && !fromEmail.isBlank()) {
-                helper.setFrom(fromEmail);
-            }
+            CreateEmailOptions params = CreateEmailOptions.builder()
+                    .from(fromEmail)
+                    .to(guest.getEmail())
+                    .subject("Il vostro invito al matrimonio 💍")
+                    .html(htmlContent)
+                    .build();
 
-            mailSender.send(message);
-            log.info("Invio avvenuto");
+            CreateEmailResponse response = resend.emails().send(params);
 
-        } catch (MessagingException exception) {
-            log.info("Invio non avvenuto");
+            log.info(
+                    "Email accettata da Resend. ID: {}",
+                    response.getId()
+            );
+
+        } catch (ResendException exception) {
+
+            log.error(
+                    "Errore Resend durante l'invio a {}",
+                    guest.getEmail(),
+                    exception
+            );
+
             throw new RuntimeException(
-                    "Errore durante l'invio dell'email di invito",
+                    "Errore durante l'invio dell'email tramite Resend",
                     exception
             );
         }
