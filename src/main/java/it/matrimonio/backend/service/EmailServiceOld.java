@@ -11,9 +11,10 @@ import org.springframework.stereotype.Service;
 
 import jakarta.mail.internet.MimeMessage;
 
-@Service
+//@Service
 @RequiredArgsConstructor
 @Slf4j
+@Deprecated
 public class EmailServiceOld {
 
     private final JavaMailSender mailSender;
