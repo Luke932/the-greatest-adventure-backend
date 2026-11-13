@@ -6,6 +6,7 @@ import it.matrimonio.backend.model.MenuType;
 import it.matrimonio.backend.model.RsvpStatus;
 import it.matrimonio.backend.repository.GuestRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -19,6 +20,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class GuestExcelExportService {
 
     private final GuestRepository guestRepository;
@@ -41,6 +43,7 @@ public class GuestExcelExportService {
 
     @Transactional(readOnly = true)
     public byte[] exportGuestsExcel() {
+        log.info("Start Service");
         List<Guest> guests = guestRepository.findAllWithCompanions();
 
         try (Workbook workbook = new XSSFWorkbook();
