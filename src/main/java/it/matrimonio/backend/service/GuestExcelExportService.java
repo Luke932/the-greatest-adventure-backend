@@ -41,101 +41,40 @@ public class GuestExcelExportService {
             "Cognome invitato principale"
     };
 
-//    @Transactional(readOnly = true)
-//    public byte[] exportGuestsExcel() {
-//        log.info("Start Service");
-//        List<Guest> guests = guestRepository.findAllWithCompanions();
-//
-//        try (Workbook workbook = new XSSFWorkbook();
-//             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-//
-//            Styles styles = createStyles(workbook);
-//
-//            List<Object[]> allPeople = buildPeopleRows(guests);
-//
-//            createSummarySheet(workbook, styles);
-//            createPeopleSheet(workbook, styles, "Tutti gli invitati", allPeople);
-//
-//            List<Object[]> confirmedPeople = allPeople.stream()
-//                    .filter(row -> RsvpStatus.CONFIRMED.name().equals(row[8]))
-//                    .toList();
-//
-//            createPeopleSheet(workbook, styles, "Confermati", confirmedPeople);
-//
-//            List<Object[]> foodPeople = allPeople.stream()
-//                    .filter(row -> hasFoodInformation(row[6], row[7]))
-//                    .toList();
-//
-//            createPeopleSheet(workbook, styles, "Menu e allergie", foodPeople);
-//
-//            workbook.setActiveSheet(0);
-//            workbook.write(output);
-//
-//            return output.toByteArray();
-//
-//        } catch (IOException e) {
-//            throw new IllegalStateException(
-//                    "Errore durante la generazione del file Excel degli invitati", e
-//            );
-//        }
-//    }
-
-
     @Transactional(readOnly = true)
     public byte[] exportGuestsExcel() {
-        log.info("1 - Start Service");
-
+        log.info("Start Service");
         List<Guest> guests = guestRepository.findAllWithCompanions();
-        log.info("2 - Invitati recuperati: {}", guests.size());
 
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
 
-            log.info("3 - Workbook creato");
-
             Styles styles = createStyles(workbook);
-            log.info("4 - Styles creati");
 
             List<Object[]> allPeople = buildPeopleRows(guests);
-            log.info("5 - Righe persone create: {}", allPeople.size());
 
             createSummarySheet(workbook, styles);
-            log.info("6 - Summary creato");
-
+            workbook.setForceFormulaRecalculation(true);
             createPeopleSheet(workbook, styles, "Tutti gli invitati", allPeople);
-            log.info("7 - Foglio tutti gli invitati creato");
 
             List<Object[]> confirmedPeople = allPeople.stream()
                     .filter(row -> RsvpStatus.CONFIRMED.name().equals(row[8]))
                     .toList();
 
-            log.info("8 - Confermati filtrati: {}", confirmedPeople.size());
-
             createPeopleSheet(workbook, styles, "Confermati", confirmedPeople);
-            log.info("9 - Foglio confermati creato");
 
             List<Object[]> foodPeople = allPeople.stream()
                     .filter(row -> hasFoodInformation(row[6], row[7]))
                     .toList();
 
-            log.info("10 - Persone con informazioni alimentari: {}", foodPeople.size());
-
             createPeopleSheet(workbook, styles, "Menu e allergie", foodPeople);
-            log.info("11 - Foglio menu e allergie creato");
 
             workbook.setActiveSheet(0);
-            log.info("12 - Active sheet impostato");
-
             workbook.write(output);
-            log.info("13 - Workbook scritto");
 
-            byte[] result = output.toByteArray();
-            log.info("14 - File generato: {} bytes", result.length);
-
-            return result;
+            return output.toByteArray();
 
         } catch (IOException e) {
-            log.error("Errore IO durante la generazione Excel", e);
             throw new IllegalStateException(
                     "Errore durante la generazione del file Excel degli invitati", e
             );
@@ -223,19 +162,21 @@ public class GuestExcelExportService {
             header.getCell(i).setCellStyle(styles.header);
         }
 
+
         String[][] metrics = {
-                {"Totale persone", "=COUNTA('Tutti gli invitati'!A2:A10000)"},
-                {"Invitati principali", "=COUNTIF('Tutti gli invitati'!B2:B10000,\"Invitato principale\")"},
-                {"Accompagnatori", "=COUNTIF('Tutti gli invitati'!B2:B10000,\"Accompagnatore\")"},
-                {"Confermati", "=COUNTIF('Tutti gli invitati'!I2:I10000,\"CONFIRMED\")"},
-                {"In attesa", "=COUNTIF('Tutti gli invitati'!I2:I10000,\"PENDING\")"},
-                {"Declinati", "=COUNTIF('Tutti gli invitati'!I2:I10000,\"DECLINED\")"},
-                {"Menu standard confermati", "=COUNTIFS('Tutti gli invitati'!H2:H10000,\"STANDARD\",'Tutti gli invitati'!I2:I10000,\"CONFIRMED\")"},
-                {"Menu celiaco confermati", "=COUNTIFS('Tutti gli invitati'!H2:H10000,\"CELIAC\",'Tutti gli invitati'!I2:I10000,\"CONFIRMED\")"},
-                {"Menu vegetariano confermati", "=COUNTIFS('Tutti gli invitati'!H2:H10000,\"VEGETARIAN\",'Tutti gli invitati'!I2:I10000,\"CONFIRMED\")"},
-                {"Menu vegano confermati", "=COUNTIFS('Tutti gli invitati'!H2:H10000,\"VEGAN\",'Tutti gli invitati'!I2:I10000,\"CONFIRMED\")"},
-                {"Altri menu confermati", "=COUNTIFS('Tutti gli invitati'!H2:H10000,\"OTHER\",'Tutti gli invitati'!I2:I10000,\"CONFIRMED\")"}
+                {"Totale persone", "COUNTA('Tutti gli invitati'!A2:A10000)"},
+                {"Invitati principali", "COUNTIF('Tutti gli invitati'!B2:B10000,\"Invitato principale\")"},
+                {"Accompagnatori", "COUNTIF('Tutti gli invitati'!B2:B10000,\"Accompagnatore\")"},
+                {"Confermati", "COUNTIF('Tutti gli invitati'!I2:I10000,\"CONFIRMED\")"},
+                {"In attesa", "COUNTIF('Tutti gli invitati'!I2:I10000,\"PENDING\")"},
+                {"Declinati", "COUNTIF('Tutti gli invitati'!I2:I10000,\"DECLINED\")"},
+                {"Menu standard confermati", "COUNTIFS('Tutti gli invitati'!H2:H10000,\"STANDARD\",'Tutti gli invitati'!I2:I10000,\"CONFIRMED\")"},
+                {"Menu celiaco confermati", "COUNTIFS('Tutti gli invitati'!H2:H10000,\"CELIAC\",'Tutti gli invitati'!I2:I10000,\"CONFIRMED\")"},
+                {"Menu vegetariano confermati", "COUNTIFS('Tutti gli invitati'!H2:H10000,\"VEGETARIAN\",'Tutti gli invitati'!I2:I10000,\"CONFIRMED\")"},
+                {"Menu vegano confermati", "COUNTIFS('Tutti gli invitati'!H2:H10000,\"VEGAN\",'Tutti gli invitati'!I2:I10000,\"CONFIRMED\")"},
+                {"Altri menu confermati", "COUNTIFS('Tutti gli invitati'!H2:H10000,\"OTHER\",'Tutti gli invitati'!I2:I10000,\"CONFIRMED\")"}
         };
+
 
         int rowIndex = 4;
 
