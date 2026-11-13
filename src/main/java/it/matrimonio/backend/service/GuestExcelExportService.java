@@ -41,44 +41,107 @@ public class GuestExcelExportService {
             "Cognome invitato principale"
     };
 
+//    @Transactional(readOnly = true)
+//    public byte[] exportGuestsExcel() {
+//        log.info("Start Service");
+//        List<Guest> guests = guestRepository.findAllWithCompanions();
+//
+//        try (Workbook workbook = new XSSFWorkbook();
+//             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+//
+//            Styles styles = createStyles(workbook);
+//
+//            List<Object[]> allPeople = buildPeopleRows(guests);
+//
+//            createSummarySheet(workbook, styles);
+//            createPeopleSheet(workbook, styles, "Tutti gli invitati", allPeople);
+//
+//            List<Object[]> confirmedPeople = allPeople.stream()
+//                    .filter(row -> RsvpStatus.CONFIRMED.name().equals(row[8]))
+//                    .toList();
+//
+//            createPeopleSheet(workbook, styles, "Confermati", confirmedPeople);
+//
+//            List<Object[]> foodPeople = allPeople.stream()
+//                    .filter(row -> hasFoodInformation(row[6], row[7]))
+//                    .toList();
+//
+//            createPeopleSheet(workbook, styles, "Menu e allergie", foodPeople);
+//
+//            workbook.setActiveSheet(0);
+//            workbook.write(output);
+//
+//            return output.toByteArray();
+//
+//        } catch (IOException e) {
+//            throw new IllegalStateException(
+//                    "Errore durante la generazione del file Excel degli invitati", e
+//            );
+//        }
+//    }
+
+
     @Transactional(readOnly = true)
     public byte[] exportGuestsExcel() {
-        log.info("Start Service");
+        log.info("1 - Start Service");
+
         List<Guest> guests = guestRepository.findAllWithCompanions();
+        log.info("2 - Invitati recuperati: {}", guests.size());
 
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream output = new ByteArrayOutputStream()) {
 
+            log.info("3 - Workbook creato");
+
             Styles styles = createStyles(workbook);
+            log.info("4 - Styles creati");
 
             List<Object[]> allPeople = buildPeopleRows(guests);
+            log.info("5 - Righe persone create: {}", allPeople.size());
 
             createSummarySheet(workbook, styles);
+            log.info("6 - Summary creato");
+
             createPeopleSheet(workbook, styles, "Tutti gli invitati", allPeople);
+            log.info("7 - Foglio tutti gli invitati creato");
 
             List<Object[]> confirmedPeople = allPeople.stream()
                     .filter(row -> RsvpStatus.CONFIRMED.name().equals(row[8]))
                     .toList();
 
+            log.info("8 - Confermati filtrati: {}", confirmedPeople.size());
+
             createPeopleSheet(workbook, styles, "Confermati", confirmedPeople);
+            log.info("9 - Foglio confermati creato");
 
             List<Object[]> foodPeople = allPeople.stream()
                     .filter(row -> hasFoodInformation(row[6], row[7]))
                     .toList();
 
+            log.info("10 - Persone con informazioni alimentari: {}", foodPeople.size());
+
             createPeopleSheet(workbook, styles, "Menu e allergie", foodPeople);
+            log.info("11 - Foglio menu e allergie creato");
 
             workbook.setActiveSheet(0);
-            workbook.write(output);
+            log.info("12 - Active sheet impostato");
 
-            return output.toByteArray();
+            workbook.write(output);
+            log.info("13 - Workbook scritto");
+
+            byte[] result = output.toByteArray();
+            log.info("14 - File generato: {} bytes", result.length);
+
+            return result;
 
         } catch (IOException e) {
+            log.error("Errore IO durante la generazione Excel", e);
             throw new IllegalStateException(
                     "Errore durante la generazione del file Excel degli invitati", e
             );
         }
     }
+
 
     private List<Object[]> buildPeopleRows(List<Guest> guests) {
         List<Object[]> rows = new ArrayList<>();
